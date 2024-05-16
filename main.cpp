@@ -100,6 +100,32 @@ void mutacja(Osobnik& osobnik, float prawd_mutacji, float prz_poszuk_k, float pr
     }
 }
 
+void krzyzowanie(Osobnik& osobnik1, Osobnik& osobnik2, float prawd_krzyz)
+{
+    uniform_real_distribution<double> dist(0.0, 1.0);
+    double losowa_liczba = dist(gen);
+
+    if (losowa_liczba > prawd_krzyz) 
+    {
+        double losowa_liczba_2 = dist(gen);
+
+        if (losowa_liczba_2 < 0.5) 
+        {
+            double temp_K = osobnik1.K;
+            osobnik1.K = osobnik2.K;
+            osobnik2.K = temp_K;
+        }
+        else 
+        {
+            double temp_T = osobnik1.T;
+            osobnik1.T = osobnik2.T;
+            osobnik2.T = temp_T;
+        }
+    }
+}
+
+
+
 int main()
 {
     int liczba_iter = 0, liczba_pop = 0;
@@ -172,33 +198,41 @@ int main()
     t = 0;
 
     Osobnik najlepszy;
+    vector<Osobnik> populacja(liczba_pop);
     najlepszy.J = numeric_limits<double>::max(); //maksymalna wartość początkowa
 
     for (int i = 0; i < liczba_pop; i++)
     {
         Osobnik osobnik;
-        osobnik.elementy_skok_osobnik.resize(liczba_iter*300);
-        osobnik.elementy_imp_osobnik.resize(liczba_iter*300);
+        osobnik.elementy_skok_osobnik.resize(liczba_iter);
+        osobnik.elementy_imp_osobnik.resize(liczba_iter);
         uniform_real_distribution<double> distK(0.0, prz_poszuk_k);
         uniform_real_distribution<double> distT(0.0, prz_poszuk_t);
         
         osobnik.K = distK(gen);
         osobnik.T = distT(gen);
 
-        for (int iter = 0; iter < liczba_iter; iter++)
+        //mutacja
+        mutacja(osobnik, prawd_mutacji, prz_poszuk_k, prz_poszuk_t);
+
+        //krzyżowanie
+        for (int i = 0; i < populacja.size() - 1; i++)
         {
-            for (int j = 0; j < 300; j++)
-            {
-                osobnik.elementy_skok_osobnik[j] = skokowa(t, osobnik.K, osobnik.T);
-                osobnik.elementy_imp_osobnik[j] = impulsowa(t, osobnik.K, osobnik.T);
-                t += 0.016667;
-            }
-            t = 0;
+            Osobnik& aktualny_osobnik = populacja[i];
+            Osobnik& kolejny_osobnik = populacja[i + 1];
+            krzyzowanie(aktualny_osobnik, kolejny_osobnik, prawd_krzyz);
         }
 
-        mutacja(osobnik, prawd_mutacji, prz_poszuk_k, prz_poszuk_t);
+        for (int iter = 0; iter < liczba_iter; iter++)
+        {
+            osobnik.elementy_skok_osobnik[iter] = skokowa(t, osobnik.K, osobnik.T);
+            osobnik.elementy_imp_osobnik[iter] = impulsowa(t, osobnik.K, osobnik.T);
+            t += 0.016667;
+        }
+        t = 0;
+
         osobnik.J = obliczJ(osobnik.elementy_skok_osobnik, osobnik.elementy_imp_osobnik, liczba_iter);
-        file3 << osobnik.K << "," << osobnik.T << "," << osobnik.J << "\n";
+        file3 << round(osobnik.K * 1000) / 1000.0 << "," << round(osobnik.T * 1000) / 1000.0 << "," << round(osobnik.J * 1000) / 1000.0 << "\n";
 
         // Aktualizacja najlepszego osobnika
         if (osobnik.J < najlepszy.J)
@@ -208,14 +242,10 @@ int main()
     }
 
     cout << "Najlepszy osobnik:\nK: " << najlepszy.K << "\nT: " << najlepszy.T << "\nJ: " << najlepszy.J << "\n";
-    cout << "Elementy funkcji skokowej najlepszego osobnika: \n";
-    for (int j = 0; j < liczba_iter; j++)
-    {
-        cout << najlepszy.elementy_skok_osobnik[j]<<endl;
-    }
 
     file1.close();
     file2.close();
+    file3.close();
 
     cout << "Dane zapisane do plikow skokowa_wyniki.csv, impulsowa_wyniki.csv oraz wyniki_osobnikow.csv\n";
 
