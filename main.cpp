@@ -45,7 +45,7 @@ double impulsowa(float t, double K, double T)
 
 double obliczJ(double* imp, double* skok)
 {
-    double suma_imp = 0, suma_skok = 0, wynik = 0;
+    double suma_imp = 0, suma_skok = 0;
     int licznik = 0;
     double pierwszy_czlon = 0, drugi_czlon = 0;
     for (int i = 0; i < 200; i++)
@@ -56,23 +56,29 @@ double obliczJ(double* imp, double* skok)
         pierwszy_czlon += pow((imp[i] - (suma_imp / (i + 1))), 2);
         drugi_czlon += pow((skok[i] - (suma_skok / (i + 1))), 2);
     }
-
     return pierwszy_czlon + drugi_czlon;
 }
 
 double obliczJ(const std::vector<double>& imp, const std::vector<double>& skok, int liczba_iteracji)
 {
-    double suma_imp = 0, suma_skok = 0, wynik = 0;
-    int licznik = 0;
+    double suma_imp = 0, suma_skok = 0, J = 0;
     double pierwszy_czlon = 0, drugi_czlon = 0;
     for (int i = 0; i < liczba_iteracji; i++)
     {
         suma_imp += imp[i];
         suma_skok += skok[i];
-
-        pierwszy_czlon += pow((imp[i] - (suma_imp / (i + 1))), 2);
-        drugi_czlon += pow((skok[i] - (suma_skok / (i + 1))), 2);
     }
+
+    double srednia_imp = suma_imp / liczba_iteracji;
+    double srednia_skok = suma_skok / liczba_iteracji;
+
+    for (int i = 0; i < liczba_iteracji; i++)
+    {
+        pierwszy_czlon += pow(imp[i] - srednia_imp, 2);
+        drugi_czlon += pow(skok[i] - srednia_skok, 2);
+    }
+
+    J = suma_imp + suma_skok;
 
     return pierwszy_czlon + drugi_czlon;
 }
@@ -174,7 +180,6 @@ int main()
     double impulsowa_g = 0;
     
     // Skokowa populacji
-    //cout << "\nSkokowa_h:\n";
     for (int i = 0; i < 300; i++)
     {
         skokowa_h = skokowa(t, K, T);
@@ -186,7 +191,6 @@ int main()
 
     // Impulsowa populacji
     t = 0;
-    //cout << "\n\nImpulsowa_g:\n";
     for (int i = 0; i < 300; i++)
     {
         impulsowa_g = impulsowa(t, K, T);
@@ -232,7 +236,7 @@ int main()
         t = 0;
 
         osobnik.J = obliczJ(osobnik.elementy_skok_osobnik, osobnik.elementy_imp_osobnik, liczba_iter);
-        file3 << round(osobnik.K * 1000) / 1000.0 << "," << round(osobnik.T * 1000) / 1000.0 << "," << round(osobnik.J * 1000) / 1000.0 << "\n";
+        file3 << round(osobnik.K * 10000) / 10000.0 << "," << round(osobnik.T * 10000) / 10000.0 << "," << round(osobnik.J * 10000) / 10000.0 << "\n";
 
         // Aktualizacja najlepszego osobnika
         if (osobnik.J < najlepszy.J)
